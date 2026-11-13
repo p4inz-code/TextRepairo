@@ -152,6 +152,10 @@ TextRepairo is free software under the **GNU General Public License v3 or later*
 
 Copyright © 2026 Atharva Patil — P4inz Interactive Labs.
 
+## More
+
+[Guide](docs/GUIDE.md) · [Known issues](docs/KNOWN_ISSUES.md) · [Changelog](CHANGELOG.md) · [Roadmap](ROADMAP.md) · [Privacy](PRIVACY.md) · [Security](SECURITY.md) · [Threat model](docs/THREAT_MODEL.md) · [Slang packs](docs/PACKS.md) · [Quality notes](docs/EVAL.md) · [Audits](docs/audits/v0.2/SUMMARY.md) · [Releasing](docs/RELEASING.md) · [Support](SUPPORT.md) · [Contributing](CONTRIBUTING.md) · [Code of conduct](CODE_OF_CONDUCT.md)
+
 ## Support and feedback
 
 - Bugs and ideas: [issues](https://github.com/p4inz-code/TextRepairo/issues/new/choose). In the app, open **Settings > Doctor > Copy report** and paste it. The report never contains your text.
