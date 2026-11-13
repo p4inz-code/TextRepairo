@@ -18,3 +18,4 @@ eval/_*.jsonl
 .itest-portable/
 build.log
 .auditenv/
+.shots/

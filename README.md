@@ -36,18 +36,18 @@ Take the file for your system from the [latest release](https://github.com/p4inz
 
 The first time you open it, TextRepairo asks you to download one AI model (1 to 5 GB) and then works offline.
 
-> **Status: 0.2, usable every day on Windows.** Windows is the system I test hardest. The macOS and Linux builds are built and smoke-tested by CI, but I have not run them on real machines yet, so expect rough edges there. The builds are **not code-signed**, so the first start shows a warning: on Windows choose *More info > Run anyway*, on macOS right-click the app and choose *Open* (or run `xattr -cr /Applications/TextRepairo.app`). If you would rather check where a file came from, use its checksum and the build attestation (`gh attestation verify <file> --repo p4inz-code/TextRepairo`).
+> **Status: 0.2, usable every day on Windows.** Windows is the system I test hardest. The macOS and Linux builds are built and smoke-tested by CI, but I have not run them on real machines yet, so expect rough edges there. On the first start Windows may show a SmartScreen notice: choose choose *More info > Run anyway*, on macOS right-click the app and choose *Open* (or run `xattr -cr /Applications/TextRepairo.app`). To check a download, compare its checksum or use the build attestation (`gh attestation verify <file> --repo p4inz-code/TextRepairo`).
 >
 > Output is **English** for now. Hindi, Marathi and Hinglish output are planned. See the [roadmap](ROADMAP.md) and [known limits](CHANGELOG.md).
 
 <table>
 <tr>
 <td width="50%" align="center">
-<sub>Dark theme: a messy team update, rewritten in the Professional style</sub><br><br>
-<img src="docs/screenshot-dark.jpg" alt="Dark theme" width="100%">
+<sub>A real progress bar: percentage, part, speed and time left</sub><br><br>
+<img src="docs/screenshot-progress.jpg" alt="Progress bar showing 14 percent, writing part 1 of 3, speed and time left" width="100%">
 </td>
 <td width="50%" align="center">
-<sub>Light theme: eleven styles and three formality levels</sub><br><br>
+<sub>Light theme with eleven styles and three formality levels</sub><br><br>
 <img src="docs/screenshot-light.jpg" alt="Light theme with the extra styles open" width="100%">
 </td>
 </tr>

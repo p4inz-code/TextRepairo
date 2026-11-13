@@ -40,4 +40,3 @@ Scope: the local server, the interface, the engine launch, downloads, the update
 ## Accepted risks (also in the threat model)
 - Updates are integrity-checked by SHA-256 from the same release page (decision: no signing key). A compromised GitHub account could publish a bad update. Mitigation: build attestations and an SBOM.
 - Prompt injection against a small model cannot be ruled out. The model has no tools and no network, so the worst case is a wrong text that the user reviews.
-- The Windows and macOS builds are not code-signed.

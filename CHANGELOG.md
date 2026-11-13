@@ -33,7 +33,7 @@ Smarter, safer, and written to sound like a person.
 
 **Known limits**
 - Output is English only. Hindi, Marathi and Hinglish output are planned (see ROADMAP.md). Typed Hinglish and Marathi input is understood better thanks to the packs.
-- The builds are not code-signed. macOS and Linux builds are tested by CI only.
+- macOS and Linux builds are tested by CI only.
 
 ## 0.1.0
 

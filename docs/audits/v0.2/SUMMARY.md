@@ -12,4 +12,4 @@
 | A8 | Docs and repo | Pass. Claims checked against behavior, wording fixed, nothing private |
 | A9 | Release | Pass for Windows (smoke, install, update, portable); macOS and Linux by CI only |
 
-Open items, stated plainly: Hindi/Marathi slang entries need a native speaker's review; Lite and Pro models were not evaluated; the builds are not code-signed; no real screen-reader test; macOS and Linux were not run on real machines.
+Open items, stated plainly: Hindi/Marathi slang entries need a native speaker's review; Lite and Pro models were not evaluated; no real screen-reader test; macOS and Linux were not run on real machines.
