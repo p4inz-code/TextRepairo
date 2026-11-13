@@ -40,10 +40,11 @@ def _free_port() -> int:
 
 
 class _Server:
-    def __init__(self, port: int = 0, safe_mode: bool = False) -> None:
+    def __init__(self, port: int = 0, safe_mode: bool = False, single_use_link: bool = False) -> None:
         self.port = port or _free_port()
         self.app = create_app(port=self.port)
         self.app.state.safe_mode = safe_mode
+        self.app.state.single_use_launch = single_use_link
         self.token: str = self.app.state.token
         config = uvicorn.Config(self.app, host="127.0.0.1", port=self.port, log_level="warning",
                                 access_log=False)
@@ -109,7 +110,14 @@ def run_desktop() -> int:
     safe, installing = _start_session()
     if installing:
         return 0
-    srv = _Server(safe_mode=safe)
+    # In the native window the launch link is used exactly once, so a copy of it (for example from a
+    # console log) is useless afterwards. In the browser fallback it stays reusable for a reload.
+    try:
+        import webview  # type: ignore  # noqa: F401
+        native = not _force_browser()
+    except Exception:
+        native = False
+    srv = _Server(safe_mode=safe, single_use_link=native)
     srv.start()
     try:
         import webview  # type: ignore

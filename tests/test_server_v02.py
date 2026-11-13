@@ -31,7 +31,8 @@ def test_launch_token_becomes_http_only_cookie(fake_engine):
     r = c.get("/?t=tok", follow_redirects=False)
     assert r.status_code == 303 and r.headers["location"] == "/"
     cookie = r.headers["set-cookie"].lower()
-    assert "tr_session=tok" in cookie and "httponly" in cookie and "samesite=strict" in cookie
+    assert "tr_session=" in cookie and "tr_session=tok;" not in cookie  # a session id, never the launch token
+    assert "httponly" in cookie and "samesite=strict" in cookie
     assert c.get("/api/status").status_code == 200  # the browser now holds the session cookie
     assert _client(fake_engine).get("/api/status").status_code == 401  # a client without it is refused
 
@@ -259,3 +260,33 @@ def test_chunked_oversized_body_is_refused(fake_engine):
     assert r.status_code == 413
     ok = _client(fake_engine).post("/api/settings", json={"theme": "dark"}, headers=H)
     assert ok.status_code == 200
+
+
+def test_desktop_launch_link_works_only_once(fake_engine):
+    app = _app(fake_engine)
+    app.state.single_use_launch = True
+    first = TestClient(app, base_url="http://127.0.0.1")
+    assert first.get("/?t=tok", follow_redirects=False).status_code == 303
+    assert first.get("/api/status").status_code == 200
+    second = TestClient(app, base_url="http://127.0.0.1")
+    r = second.get("/?t=tok", follow_redirects=False)
+    assert r.status_code == 403 and "already used" in r.json()["error"]
+    assert second.get("/api/status").status_code == 401
+    assert first.get("/api/status").status_code == 200  # the first window keeps working
+
+
+def test_browser_launch_link_can_be_reused_and_each_gets_its_own_session(fake_engine):
+    app = _app(fake_engine)
+    a = TestClient(app, base_url="http://127.0.0.1")
+    b = TestClient(app, base_url="http://127.0.0.1")
+    ra = a.get("/?t=tok", follow_redirects=False)
+    rb = b.get("/?t=tok", follow_redirects=False)
+    assert ra.status_code == rb.status_code == 303
+    assert ra.headers["set-cookie"].split(";")[0] != rb.headers["set-cookie"].split(";")[0]
+    assert a.get("/api/status").status_code == 200 and b.get("/api/status").status_code == 200
+
+
+def test_the_launch_token_itself_is_not_a_valid_cookie(fake_engine):
+    c = _client(fake_engine)
+    c.cookies.set("tr_session", "tok")
+    assert c.get("/api/status").status_code == 401

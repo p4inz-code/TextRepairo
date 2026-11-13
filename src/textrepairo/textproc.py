@@ -165,6 +165,75 @@ def non_latin_ratio(text: str) -> float:
     return odd / len(letters)
 
 
+# ---------------------------------------------------------------- hijack guard
+
+_STOP = set("""a an the and or but if then than so as of to in on at by for with from into onto about over under
+is are was were be been being am do does did done have has had having will would shall should can could may might
+must i me my mine we us our you your yours he him his she her it its they them their this that these those there
+here what which who whom whose when where why how not no yes only just also very too more most some any all each
+every other such own same up down out off again once now ok okay please pls thx""".split())
+_WORD = re.compile(r"[a-z0-9']+")
+
+
+def _content_keys(text: str) -> set[str]:
+    """Content words reduced to a 4-letter stem, so 'apply' and 'applying' match."""
+    return {w[:4] for w in _WORD.findall(text.lower()) if len(w) >= 3 and w not in _STOP}
+
+
+def looks_english(text: str) -> bool:
+    words = _WORD.findall(text.lower())
+    if len(words) < 3 or non_latin_ratio(text) > 0.1:
+        return False
+    return sum(1 for w in words if w in _STOP) / len(words) >= 0.2
+
+
+def looks_hijacked(src: str, out: str) -> bool:
+    """True when English text came back as something that is clearly not a rewrite of it.
+
+    Typical case: the text said "reply with only OK" and the model answered "OK". A real rewrite keeps
+    most of the source's content words, so we only flag results that share almost nothing with it.
+    """
+    if not looks_english(src):
+        return False
+    a, b = _content_keys(src), _content_keys(out)
+    if len(a) < 2:
+        return False
+    if not b:
+        return True
+    shared = len(a & b)
+    return shared / len(a) < 0.34 and shared / len(b) < 0.25
+
+
+_ONES = ("zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen "
+         "sixteen seventeen eighteen nineteen").split()
+_TENS = {2: "twenty", 3: "thirty", 4: "forty", 5: "fifty", 6: "sixty", 7: "seventy", 8: "eighty", 9: "ninety"}
+
+
+def _spelled(n: int) -> set[str]:
+    """English words for 0..100, so '5' is found when the model wrote 'five'."""
+    if 0 <= n < 20:
+        return {_ONES[n]}
+    if n == 100:
+        return {"hundred", "one hundred"}
+    if 20 <= n < 100:
+        tens, unit = divmod(n, 10)
+        return {_TENS[tens]} if unit == 0 else {f"{_TENS[tens]}-{_ONES[unit]}", f"{_TENS[tens]} {_ONES[unit]}"}
+    return set()
+
+
+def number_is_present(num: str, out: str) -> bool:
+    """True if the number appears in the output as written, with separators, or spelled out."""
+    low = out.lower()
+    if num in out:
+        return True
+    digits = num.replace(",", "")
+    if digits and digits in out.replace(",", ""):
+        return True
+    if digits.isdigit():
+        return any(re.search(r"\b" + re.escape(w) + r"\b", low) for w in _spelled(int(digits)))
+    return False
+
+
 def check_output(src: str, out: str) -> list[str]:
     """Cheap sanity checks; the UI shows these as warnings, never as errors."""
     warnings: list[str] = []
@@ -176,7 +245,7 @@ def check_output(src: str, out: str) -> list[str]:
     ratio = len(out) / max(1, len(src))
     if len(src) > 40 and (ratio > 3.0 or ratio < 0.25):
         warnings.append("The result is much longer or shorter than the input. Please review it.")
-    missing_nums = [n for n in set(_NUM.findall(src)) if n not in out]
+    missing_nums = [n for n in set(_NUM.findall(src)) if not number_is_present(n, out)]
     if missing_nums and non_latin_ratio(src) < 0.15:
         warnings.append("Some numbers from the input are missing in the result: "
                         + ", ".join(sorted(missing_nums)[:5]))

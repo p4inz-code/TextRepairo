@@ -63,7 +63,8 @@ def score(case: dict, out: str) -> dict[str, bool]:
     res["english"] = non_latin_ratio(out) < 0.1
     ratio = len(out) / max(1, len(inp))
     wide = case["mode"] in ("prompt", "compose", "email")
-    res["size"] = 0.25 <= ratio <= (12.0 if wide else 3.5) or len(inp) < 15
+    cjk = non_latin_ratio(inp) > 0.3  # Chinese or Japanese text is short, so English needs more characters
+    res["size"] = 0.25 <= ratio <= (12.0 if wide else 8.0 if cjk else 3.5) or len(inp) < 15
     if case.get("keep"):
         res["keep"] = all(k.lower() in low for k in case["keep"])
     if case.get("forbid"):
@@ -97,6 +98,9 @@ async def run(args: argparse.Namespace) -> int:
         cases = [c for c in cases if c["mode"] in args.modes.split(",")]
     if args.langs:
         cases = [c for c in cases if c["lang"] in args.langs.split(",")]
+    if args.ids:
+        prefixes = tuple(x.strip() for x in args.ids.split(",") if x.strip())
+        cases = [c for c in cases if c["id"].startswith(prefixes)]
     if args.limit:
         cases = cases[: args.limit]
     engine = Engine()
@@ -162,6 +166,7 @@ def main() -> int:
     p.add_argument("--cases", default=str(HERE / "cases.jsonl"))
     p.add_argument("--modes", help="comma list, e.g. fix,formal")
     p.add_argument("--langs", help="comma list, e.g. en,hinglish")
+    p.add_argument("--ids", help="comma list of case id prefixes, e.g. inj,fm-,en-fix-01")
     p.add_argument("--limit", type=int, default=0)
     p.add_argument("--threads", type=int, default=0, help="CPU threads (0 = app default)")
     p.add_argument("--pause", type=float, default=0.0, help="seconds to rest between cases")

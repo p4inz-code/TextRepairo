@@ -180,3 +180,11 @@ def test_every_formality_style_has_register_examples_for_both_levels():
             for level in ("advanced", "extreme"):
                 for _src, out in s.register_examples[level]:
                     assert "n't" not in out and "'re" not in out and "'ll" not in out, (s.id, level)
+
+
+def test_formality_is_repeated_after_the_text_for_advanced_and_extreme_only():
+    for level, word in (("advanced", "refined register"), ("extreme", "extremely formal register")):
+        last = prompts.build_messages("message", "x", level)[-1]["content"]
+        assert word in last and last.rstrip().endswith("English result.")
+    assert "register" not in prompts.build_messages("message", "x", "normal")[-1]["content"]
+    assert "register" not in prompts.build_messages("fix", "x", "extreme")[-1]["content"]

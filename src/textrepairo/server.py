@@ -209,12 +209,16 @@ def create_app(engine: Engine | None = None, token: str | None = None,
     app.state.port = port
     app.state.safe_mode = False
     app.state.request_exit = lambda: None  # set by the launcher (closes the window / stops the server)
+    app.state.single_use_launch = False  # the desktop window turns this on: its link works once
+    app.state.launch_used = False
+    sessions: set[str] = set()  # session ids handed out in exchange for the launch token
 
     def authed(request: Request) -> bool:
         tok = app.state.token
         cookie = request.cookies.get(SESSION_COOKIE, "")
         header = request.headers.get("x-token", "")
-        return secrets.compare_digest(cookie, tok) or secrets.compare_digest(header, tok)
+        in_session = bool(cookie) and any(secrets.compare_digest(cookie, s) for s in sessions)
+        return in_session or secrets.compare_digest(header, tok)
 
     @app.middleware("http")
     async def guard(request: Request, call_next):
@@ -226,8 +230,14 @@ def create_app(engine: Engine | None = None, token: str | None = None,
         # One-time launch link: ?t=<token> becomes a session cookie, then the address is cleaned.
         if path == "/" and "t" in request.query_params:
             if secrets.compare_digest(request.query_params["t"], app.state.token):
+                if app.state.single_use_launch and app.state.launch_used:
+                    return JSONResponse({"error": "This link was already used. Open TextRepairo again."},
+                                        status_code=403)
+                app.state.launch_used = True
+                sid = secrets.token_urlsafe(32)  # the cookie holds a session id, never the launch token
+                sessions.add(sid)
                 resp = RedirectResponse("/", status_code=303)
-                resp.set_cookie(SESSION_COOKIE, app.state.token, httponly=True, samesite="strict", path="/")
+                resp.set_cookie(SESSION_COOKIE, sid, httponly=True, samesite="strict", path="/")
                 resp.headers["Cache-Control"] = "no-store"
                 return resp
             return JSONResponse({"error": "bad token"}, status_code=403)

@@ -28,6 +28,24 @@ Models are downloaded by the user on request and are not part of the source repo
 | [pip-audit](https://github.com/pypa/pip-audit) (CI only) | Apache-2.0 |
 | Python standard library, including `sqlite3` (history) | PSF License; SQLite is public domain |
 
+### Dependencies of the dependencies
+
+Installed automatically with the packages above (versions as checked for the 0.2.0 release). All licenses are compatible with GPLv3.
+
+| Package | License | Package | License |
+|---|---|---|---|
+| starlette | BSD-3-Clause | pydantic, pydantic-core | MIT |
+| anyio | MIT | annotated-types, annotated-doc | MIT |
+| h11 | MIT | httpcore | BSD-3-Clause |
+| idna | BSD-3-Clause | certifi | MPL-2.0 |
+| click | BSD-3-Clause | typing-extensions | PSF-2.0 |
+| typing-inspection | MIT | bottle (pywebview) | MIT |
+| proxy-tools (pywebview) | MIT | pythonnet, clr-loader (pywebview, Windows) | MIT |
+| cffi | MIT-0 | pycparser | BSD-3-Clause |
+| opentelemetry-api | Apache-2.0 | | |
+
+`opentelemetry-api` is required by FastAPI. It is only the empty interface: no SDK or exporter is installed, so it collects and sends nothing. A test (`tests/test_repo_hygiene.py`) fails the build if a telemetry package is ever installed or an unknown web address appears in the code.
+
 ## Original work in this repository
 
 - The slang and context packs (`src/textrepairo/data/packs/`), the prompt wording, the "write like a person" rules and the evaluation cases are original work of the TextRepairo authors, released under the project license. They were written from the authors' own knowledge. No text was copied from Urban Dictionary, other online dictionaries or the humanizer skill. That skill's description of common AI-writing patterns (itself based on observations published by Wikipedia editors, "Signs of AI writing") informed which kinds of phrases to avoid. The short pattern list in `src/textrepairo/humanize.py` was written independently.

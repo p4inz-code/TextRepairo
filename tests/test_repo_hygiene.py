@@ -106,3 +106,24 @@ def test_injection_corpus_is_large_enough():
     inj = [r for r in rows if r["id"].startswith("inj") or "injection" in r.get("tags", [])]
     assert len(inj) >= 30 and len(rows) >= 150
     assert len({r["id"] for r in rows}) == len(rows)
+
+
+def test_no_telemetry_packages_are_installed():
+    import importlib.util
+    for mod in ("opentelemetry.sdk", "sentry_sdk", "posthog", "mixpanel", "segment", "amplitude", "datadog"):
+        try:
+            found = importlib.util.find_spec(mod)
+        except (ImportError, ValueError):
+            found = None
+        assert found is None, f"{mod} is installed: the app must not ship telemetry"
+
+
+def test_only_known_hosts_appear_in_the_source():
+    """Every web address in the application code must be one of the project's known endpoints."""
+    allowed = {"api.github.com", "github.com", "huggingface.co", "127.0.0.1", "localhost", "atharvapatil.tech",
+               "discord.gg", "p4inz-code.github.io", "buymeacoffee.com", "ggml-org", "www.w3.org"}
+    found = set()
+    for p in (ROOT / "src" / "textrepairo").glob("*.py"):
+        for host in re.findall(r"https?://([A-Za-z0-9.\-]+)", p.read_text(encoding="utf-8")):
+            found.add(host)
+    assert found <= allowed, sorted(found - allowed)

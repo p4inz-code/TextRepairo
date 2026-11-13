@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 import uvicorn
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.responses import PlainTextResponse, Response
 
 from textrepairo import config, history, updater
@@ -31,8 +31,11 @@ class FakeRelease:
         app = FastAPI()
         self.hits: list[str] = []
 
+        self.headers: list[dict] = []
+
         @app.get("/releases/latest")
-        async def latest():
+        async def latest(request: Request):
+            self.headers.append(dict(request.headers))
             self.hits.append("latest")
             return {"tag_name": f"v{version}", "html_url": f"{base}/page", "body": notes,
                     "assets": [{"name": name, "browser_download_url": f"{base}/dl/{name}"},
@@ -347,3 +350,13 @@ def test_oversized_update_is_refused(release, monkeypatch):
     with pytest.raises(updater.UpdateError, match="larger than expected"):
         updater.download(info)
     assert not list(config.updates_dir().glob("*"))
+
+
+def test_update_check_sends_nothing_about_the_user(release):
+    r = release()
+    updater.check()
+    h = r.headers[0]
+    assert h["user-agent"] == f"TextRepairo/{updater.__version__}"
+    for leak in ("cookie", "authorization", "x-token", "referer", "x-user", "x-machine"):
+        assert leak not in h, leak
+    assert r.hits == ["latest"]  # a not-newer or manual-build check contacts nothing else

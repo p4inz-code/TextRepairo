@@ -14,3 +14,4 @@ packaging/build/
 *.spec.bak
 eval/_*.jsonl
 .uitest-home/
+.uitest-empty/

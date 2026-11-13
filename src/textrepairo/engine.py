@@ -20,8 +20,8 @@ from .humanize import humanize_pass
 from .progress import ProgressTracker
 from .prompts import (FORMALITY, STYLES, build_messages, expected_ratio, resolve_style)
 from .runtime import LlamaServer, RuntimeError_, choose_backend, find_runtime
-from .textproc import (check_output, clean_output, diff_ops, hide_partial_placeholder, mask,
-                       split_chunks, unmask)
+from .textproc import (check_output, clean_output, diff_ops, hide_partial_placeholder, looks_hijacked,
+                       mask, split_chunks, unmask)
 
 
 class EngineError(RuntimeError):
@@ -181,6 +181,12 @@ class Engine:
                                 "they were restored in place.")
                 for k in missing:  # put dropped spans at the end so nothing is lost
                     restored += " " + store[k]
+            if looks_hijacked(chunk.text, restored):
+                # The model answered the text instead of rewriting it (it probably contained a command).
+                # Showing nothing it made up is the safe choice: keep the author's own words.
+                warnings.append("Part of your text looks like instructions, and the model did not rewrite "
+                                "it, so that part is shown unchanged.")
+                restored = chunk.text
             if finish == "length":
                 warnings.append("The result was cut off because it got too long. Please review the end.")
             warnings += [w for w in check_output(chunk.text, restored) if w not in warnings]
