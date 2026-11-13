@@ -1,0 +1,15 @@
+__pycache__/
+*.py[cod]
+.venv/
+*.egg-info/
+build/
+dist/
+.pytest_cache/
+eval/results/
+packaging/runtime/
+packaging/build/
+*.gguf
+*.part
+.DS_Store
+*.spec.bak
+eval/_*.jsonl

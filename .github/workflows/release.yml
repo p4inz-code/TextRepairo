@@ -1,0 +1,108 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    name: Build (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { name: windows, os: windows-latest, extras: "dev,desktop" }
+          - { name: macos, os: macos-14, extras: "dev,desktop" }
+          - { name: linux, os: ubuntu-22.04, extras: "dev" }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install
+        shell: bash
+        run: python -m pip install -e ".[${{ matrix.extras }}]"
+      - name: Test
+        shell: bash
+        run: python -m pytest -q
+      - name: Version
+        id: ver
+        shell: bash
+        run: echo "version=$(python -c 'import textrepairo; print(textrepairo.__version__)')" >> "$GITHUB_OUTPUT"
+      - name: Build app (bundles the llama.cpp engine)
+        shell: bash
+        run: python scripts/build_app.py
+
+      # ---------------- Windows
+      - name: Smoke test (Windows)
+        if: matrix.name == 'windows'
+        run: python scripts/smoke_dist.py dist/TextRepairo/textrepairo-cli.exe
+      - name: Package (Windows)
+        if: matrix.name == 'windows'
+        shell: pwsh
+        run: |
+          $v = "${{ steps.ver.outputs.version }}"
+          New-Item -ItemType Directory -Force dist/release | Out-Null
+          Compress-Archive -Path dist/TextRepairo -DestinationPath "dist/release/TextRepairo-$v-windows-x64.zip"
+          $iscc = "C:\Program Files (x86)\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) { choco install innosetup -y --no-progress; }
+          & $iscc "/DAppVersion=$v" packaging\windows\installer.iss
+          Move-Item "dist/TextRepairo-Setup-$v.exe" "dist/release/"
+
+      # ---------------- macOS
+      - name: Smoke test (macOS)
+        if: matrix.name == 'macos'
+        run: python scripts/smoke_dist.py dist/TextRepairo/textrepairo-cli
+      - name: Package (macOS)
+        if: matrix.name == 'macos'
+        run: |
+          v="${{ steps.ver.outputs.version }}"
+          mkdir -p dist/release
+          codesign --force --deep --sign - dist/TextRepairo.app || true
+          hdiutil create -volname "TextRepairo" -srcfolder dist/TextRepairo.app -ov -format UDZO \
+            "dist/release/TextRepairo-$v-macos-arm64.dmg"
+
+      # ---------------- Linux
+      - name: Smoke test (Linux)
+        if: matrix.name == 'linux'
+        run: python scripts/smoke_dist.py dist/TextRepairo/textrepairo-cli
+      - name: Package (Linux)
+        if: matrix.name == 'linux'
+        run: bash scripts/package_linux.sh "${{ steps.ver.outputs.version }}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-${{ matrix.name }}
+          path: dist/release/*
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          path: assets
+          pattern: release-*
+          merge-multiple: true
+      - name: Checksums
+        run: |
+          cd assets
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          tag="${GITHUB_REF_NAME}"
+          if [[ "${GITHUB_REF_TYPE}" != "tag" ]]; then echo "Not a tag run; skipping publish."; exit 0; fi
+          notes="notes.md"
+          if [[ -f "docs/release-notes/${tag}.md" ]]; then cp "docs/release-notes/${tag}.md" "$notes"; else echo "Release ${tag}" > "$notes"; fi
+          gh release view "$tag" >/dev/null 2>&1 && gh release delete "$tag" --yes || true
+          gh release create "$tag" assets/* --title "TextRepairo ${tag}" --notes-file "$notes"
