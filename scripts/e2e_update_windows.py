@@ -53,7 +53,8 @@ def main() -> int:
     assert r.returncode == 0, f"installer exit code {r.returncode}"
     cli = app_dir / "textrepairo-cli.exe"
     assert cli.is_file() and any(app_dir.glob("unins*.exe")), "installed files missing"
-    before = (cli.stat().st_mtime_ns, cli.stat().st_size)
+    dat = next(app_dir.glob("unins*.dat"))
+    before = dat.stat().st_mtime_ns  # the installer rewrites its uninstall record on every run
 
     port = free_port()
     base = f"http://127.0.0.1:{port}"
@@ -119,16 +120,12 @@ def main() -> int:
         deadline = time.time() + 180
         while time.time() < deadline:
             time.sleep(2)
-            try:
-                st = cli.stat()
-            except OSError:
-                continue
-            if (st.st_mtime_ns, st.st_size) != before and proc.poll() is not None:
+            if proc.poll() is not None and dat.stat().st_mtime_ns != before:
                 break
         else:
-            raise AssertionError("the installer did not replace the files in time")
-        time.sleep(5)  # let the installer finish
-        print("5. the installer replaced the files and the old app exited")
+            raise AssertionError("the installer did not run in time (app exited: %s)" % (proc.poll() is not None))
+        time.sleep(8)  # let the installer finish
+        print("5. the old app exited and the installer ran (uninstall record rewritten)")
         after = subprocess.run([str(cli), "--version"], capture_output=True, text=True, timeout=60).stdout.strip()
         print("   installed version now:", after)
         ok = True

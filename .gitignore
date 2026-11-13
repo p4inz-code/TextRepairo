@@ -15,3 +15,4 @@ packaging/build/
 eval/_*.jsonl
 .uitest-home/
 .uitest-empty/
+.itest-portable/

@@ -11,8 +11,10 @@ from __future__ import annotations
 import http.cookiejar
 import json
 import re
+import os
 import subprocess
 import sys
+import tempfile
 import time
 import urllib.error
 import urllib.request
@@ -21,16 +23,19 @@ from pathlib import Path
 
 def main() -> int:
     exe = str(Path(sys.argv[1]).resolve())
+    # A scratch data folder: the smoke test must never touch (or leave a safe-mode marker in) real data.
+    scratch = tempfile.TemporaryDirectory(prefix="tr-smoke-")
+    env = dict(os.environ, TEXTREPAIRO_HOME=scratch.name)
     print(subprocess.run([exe, "--version"], capture_output=True, text=True, timeout=120).stdout.strip())
 
-    doc = subprocess.run([exe, "doctor", "--json"], capture_output=True, text=True, timeout=180)
+    doc = subprocess.run([exe, "doctor", "--json"], capture_output=True, text=True, timeout=180, env=env)
     rows = json.loads(doc.stdout)
     ids = {r["id"] for r in rows}
     assert {"version", "data", "runtime", "packs", "history"} <= ids, ids
     print("doctor:", ", ".join(f"{r['id']}={r['status']}" for r in rows))
 
     proc = subprocess.Popen([exe, "serve", "--no-open"], stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                            text=True, bufsize=1)
+                            text=True, bufsize=1, env=env)
     url = None
     deadline = time.time() + 120
     try:
@@ -91,6 +96,7 @@ def main() -> int:
             proc.wait(timeout=10)
         except subprocess.TimeoutExpired:
             proc.kill()
+        scratch.cleanup()
 
 
 if __name__ == "__main__":

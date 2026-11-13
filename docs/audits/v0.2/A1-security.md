@@ -15,7 +15,7 @@ Scope: the local server, the interface, the engine launch, downloads, the update
 | 7 | Interface has no inline code, `innerHTML`, `eval`, native dialogs | `tests/test_web_static.py` (static scan of HTML and JS) | Pass |
 | 8 | Request size capped, including chunked bodies without a length | `test_oversized_body_is_refused`, `test_chunked_oversized_body_is_refused` | Pass (this audit found that the first version only checked `Content-Length`; a streaming size limit was added) |
 | 9 | Text length capped at 10,000 characters by the server | `test_repair_limit_is_enforced_by_the_server` | Pass |
-| 10 | One repair at a time | Engine lock (`Engine._repair_lock`), exercised by every engine test | Pass |
+| 10 | One repair at a time | Engine lock (`Engine._repair_lock`), `test_only_one_repair_runs_at_a_time` | Pass |
 | 11 | Prompt injection | 34 injection cases against the real model, plus wrapper-tag masking (`</text>` in user text is masked) | See A5. This audit found two real failures in the first run (`</text>` breakout and a short "reply with only OK" command); both were fixed and re-tested |
 | 12 | Engine archives verified by pinned SHA-256; unknown assets refused; path traversal refused | `test_every_runtime_asset_is_pinned`, `test_verify_asset_accepts_match_and_rejects_everything_else`, zip and tar traversal tests | Pass (this audit found that v0.1 did not verify engine downloads; it does now) |
 | 13 | Model downloads verified by pinned SHA-256 | Existing model tests; Doctor "Verify model" re-hashes the real file | Pass (checked: the installed Standard model matches its published checksum) |
