@@ -10,6 +10,11 @@ Checks are deliberately simple and objective (no cloud judge, runs offline):
   clean      no "Here is..." preface, no tags, not empty
   size       output not wildly longer/shorter than the input
   similarity fix-mode only: word overlap with the reference (reported, soft)
+  keep_any   at least one of these must appear (e.g. a formal salutation)
+  unchanged  text that is already correct must come back (almost) unchanged
+  not_upper  ALL-CAPS input must not come back in all caps
+  paras      the number of paragraphs must stay the same
+  ai_tell    stock "AI voice" phrases per 100 words that the author did not write (reported)
 Use --threads to keep the machine cool; the app itself defaults to about half the cores.
 """
 
@@ -55,7 +60,8 @@ def score(case: dict, out: str) -> dict[str, bool]:
     res["clean"] = bool(out.strip()) and not PREFACE.match(out) and "<text>" not in low
     res["english"] = non_latin_ratio(out) < 0.1
     ratio = len(out) / max(1, len(inp))
-    res["size"] = 0.25 <= ratio <= (12.0 if case["mode"] == "prompt" else 3.5) or len(inp) < 15
+    wide = case["mode"] in ("prompt", "compose", "email")
+    res["size"] = 0.25 <= ratio <= (12.0 if wide else 3.5) or len(inp) < 15
     if case.get("keep"):
         res["keep"] = all(k.lower() in low for k in case["keep"])
     if case.get("forbid"):
@@ -63,6 +69,17 @@ def score(case: dict, out: str) -> dict[str, bool]:
     if case.get("forbid_exact"):
         res["no_obey"] = all(out.strip().strip(".").strip().lower() != f.lower()
                              for f in case["forbid_exact"])
+    if case.get("keep_any"):
+        res["keep_any"] = any(k.lower() in low for k in case["keep_any"])
+    if case.get("unchanged"):
+        res["unchanged"] = similarity(out, inp) >= 0.9
+    if case.get("not_upper"):
+        letters = [c for c in out if c.isalpha()]
+        res["not_upper"] = bool(letters) and sum(c.isupper() for c in letters) / len(letters) < 0.5
+    if case.get("paras"):
+        def count_paras(t: str) -> int:
+            return len(re.split(r"\n\s*\n", t.strip()))
+        res["paras"] = count_paras(out) == count_paras(inp)
     if case.get("max_chars"):
         res["short"] = len(out) <= case["max_chars"]
     return res
@@ -86,7 +103,8 @@ async def run(args: argparse.Namespace) -> int:
     try:
         for i, case in enumerate(cases, 1):
             try:
-                res = await engine.repair(case["input"], case["mode"], settings)
+                res = await engine.repair(case["input"], case["mode"], settings,
+                                          formality=case.get("formality"), target=case.get("target"))
                 out, secs = res.text, res.seconds
             except EngineError as e:
                 print(f"error: {e}", file=sys.stderr)

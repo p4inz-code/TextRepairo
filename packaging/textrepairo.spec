@@ -10,7 +10,12 @@ sys.path.insert(0, str(ROOT / "src"))
 IS_WIN = sys.platform == "win32"
 IS_MAC = sys.platform == "darwin"
 
-datas = [(str(ROOT / "src" / "textrepairo" / "web"), "textrepairo/web")]
+datas = [(str(ROOT / "src" / "textrepairo" / "web"), "textrepairo/web"),
+         (str(ROOT / "src" / "textrepairo" / "data"), "textrepairo/data")]
+# Documents shown in the About screen (read from textrepairo/data at run time).
+for doc in ("LICENSE", "ADDITIONAL_TERMS.md", "PRIVACY.md", "THIRD_PARTY_NOTICES.md", "SECURITY.md"):
+    if (ROOT / doc).is_file():
+        datas.append((str(ROOT / doc), "textrepairo/data"))
 runtime = ROOT / "packaging" / "runtime"
 if runtime.is_dir():
     datas.append((str(runtime), "runtime"))

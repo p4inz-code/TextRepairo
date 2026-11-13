@@ -9,8 +9,10 @@ DIST="$ROOT/dist"
 OUT="$DIST/release"
 mkdir -p "$OUT"
 
-# --- tar.gz
+# --- tar.gz (portable: the flag file keeps models, settings and history in ./data next to the app)
+touch "$DIST/TextRepairo/portable.flag"
 tar -C "$DIST" -czf "$OUT/TextRepairo-$VERSION-linux-x64.tar.gz" TextRepairo
+rm -f "$DIST/TextRepairo/portable.flag"
 
 # --- .deb
 DEB="$ROOT/build/deb"
@@ -38,7 +40,7 @@ Version: $VERSION
 Section: utils
 Priority: optional
 Architecture: amd64
-Maintainer: TextRepairo contributors <noreply@users.noreply.github.com>
+Maintainer: P4inz Interactive Labs <noreply@users.noreply.github.com>
 Homepage: https://github.com/p4inz-code/TextRepairo
 Description: Offline text repair with a local AI model
  Turns messy text in any language into proper English (fix, formal,
