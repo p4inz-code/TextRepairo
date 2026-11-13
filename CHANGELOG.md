@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.2.1
+
+Security hardening, found by a CodeQL review.
+
+- **No internal details reach the page.** Error messages in the interface are either written by the app (with your home and data folders hidden) or a short generic sentence. Exception text, stack traces and private paths are never sent to the browser. Tests fail the build if that changes.
+- **Safer file picking.** Importing a model or slang pack now requires an absolute path to an ordinary file of the right type, refuses network-share paths, sanitises the saved file name, and a pack is saved as the app's own validated copy.
+- **Removing a pack** can only touch files inside the packs folder.
+- GitHub secret scanning with push protection, private vulnerability reporting and Dependabot alerts are switched on for the repository. All 15 open code-scanning alerts are resolved (one intentional file-picker alert is documented and dismissed).
+
 ## 0.2.0
 
 Smarter, safer, and written to sound like a person.

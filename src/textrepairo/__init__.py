@@ -2,7 +2,7 @@
 # Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 """TextRepairo: offline text repair with a local LLM."""
 
-__version__ = "0.2.0"
+__version__ = "0.2.1"
 APP_NAME = "TextRepairo"
 BRAND = "P4inz Interactive Labs"
 AUTHOR = "Atharva Patil"
