@@ -63,7 +63,7 @@ The first time you open it, TextRepairo asks you to download one AI model (1 to 
 - **History** of your last 100 results, on your computer only. Switch it off, use Private mode, or clear it any time. Deleted text is overwritten.
 - **Protected spans.** Links, code, emails and file paths are kept exactly as you wrote them. Numbers that go missing trigger a warning.
 - **Doctor and About** inside the app. Doctor checks the engine, the model (with a checksum), your data folder and that nothing is reachable from the network.
-- **Cool and quiet by default.** The engine runs at low priority on about half of your CPU cores. GPU acceleration is optional.
+- **Cool and quiet by default.** The engine runs at low priority and uses at most half of your CPU threads (never more than 8). GPU acceleration is optional.
 - **Desktop app, web UI and command line** from the same core.
 
 Up to 10,000 characters per repair.

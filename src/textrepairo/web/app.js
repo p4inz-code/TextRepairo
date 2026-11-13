@@ -595,7 +595,7 @@
         el("div", { class: "field-row" }, el("span", { text: "Processing" }),
           U.select({ label: "Processing", value: set.backend, options: [{ value: "auto", label: "Automatic (recommended)" }, ...s.available_backends.map((b) => ({ value: b, label: labels[b] || b }))],
             onChange: async (v) => { await api("/api/engine/stop", {}); await setSetting({ backend: v }); draw(); } })),
-        el("p", { class: "muted small", text: `This computer: ${hw.cpu_threads} CPU threads, ${hw.ram_gb} GB RAM${hw.gpu_name ? ", " + hw.gpu_name : ", no dedicated GPU found"}. Using: ${s.backend}. The CPU uses about half of your cores to stay cool.` }), gpuBox));
+        el("p", { class: "muted small", text: `This computer: ${hw.cpu_threads} CPU threads, ${hw.ram_gb} GB RAM${hw.gpu_name ? ", " + hw.gpu_name : ", no dedicated GPU found"}. Using: ${s.backend}. The engine runs at low priority and uses at most half of your CPU threads (never more than 8) to stay cool.` }), gpuBox));
 
       // Writing defaults
       sections.push(el("section", {}, el("h3", { text: "Writing" }),

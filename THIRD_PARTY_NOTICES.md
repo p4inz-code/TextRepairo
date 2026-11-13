@@ -56,3 +56,32 @@ Installed automatically with the packages above (versions as checked for the 0.2
 - The sidecar pattern (spawn `llama-server` on loopback, talk OpenAI-compatible HTTP) follows the approach documented by llama.cpp and used by desktop apps such as [Liquid AI's desktop guide](https://docs.liquid.ai/deployment/on-device/llama-cpp/desktop).
 - Findings on small-model grammar correction come from [Exploring the Feasibility of Multilingual GEC with a Single LLM up to 9B](https://arxiv.org/abs/2505.06004). No code or data from it is included.
 - Models that were evaluated and **not** shipped because their license is not permissive: Gemma (Google terms), Llama (Meta community license), CoEdIT (CC-BY-NC-4.0).
+
+
+## llama.cpp license text
+
+The text engine bundled with the app (`llama-server` and the ggml libraries, release b12360) is distributed under this license. The runtime also ships the `LICENSE-LLVM-OpenMP` file for the OpenMP library it includes.
+
+```
+MIT License
+
+Copyright (c) 2023-2026 The ggml authors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+```

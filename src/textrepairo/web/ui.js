@@ -61,6 +61,9 @@
   // ------------------------------------------------------------ focus traps (stack: only the top one reacts)
   const trapStack = [];
   document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && openPopup) {  // an open dropdown or menu closes first, not the dialog behind it
+      e.preventDefault(); e.stopPropagation(); closePopup(); return;
+    }
     const top = trapStack[trapStack.length - 1];
     if (!top) return;
     if (e.key === "Escape") {
