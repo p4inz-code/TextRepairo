@@ -76,9 +76,14 @@ def _pack(paragraph: str, max_chars: int) -> list[str]:
 _PROTECT = re.compile(
     r"(```.*?```"  # fenced code
     r"|`[^`\n]+`"  # inline code
+    r"|(?i:</?text\s*>)"  # our own wrapper tags inside user text must not close the data block
     r"|https?://[^\s<>\"')\]]+"  # urls
     r"|www\.[^\s<>\"')\]]+"
     r"|[\w.+-]+@[\w-]+(?:\.[\w-]+)+"  # emails
+    r"|(?<![\w/.])\d{1,4}[/.-]\d{1,2}[/.-]\d{2,4}(?![\w/])"  # numeric dates like 12/05/2026
+    r"|(?<![\w/.])\d{1,2}/\d{1,2}(?![\w/.])"  # short dates like 12/05
+    r"|(?<![\w:])\d{1,2}:\d{2}(?::\d{2})?(?:\s?[AaPp]\.?[Mm]\.?)?(?![\w:])"  # times like 4:30 or 4:30 pm
+    r"|(?<![\w.])\+?\(?\d[\d ()-]{6,}\d(?![\w])"  # phone numbers and long ids (8+ digits, checked below)
     r"|(?<![\w/])[A-Za-z]:\\[^\s]+"  # windows paths
     r"|(?<![\w])~?/(?:[\w.-]+/)+[\w.-]+"  # unix paths
     r")",
@@ -88,10 +93,14 @@ _PLACEHOLDER = re.compile(r"\[\[KEEP_(\d+)\]\]")
 
 
 def mask(text: str, start: int = 0) -> tuple[str, dict[str, str]]:
-    """Replace code, links, emails and paths with [[KEEP_n]] tokens the model must preserve."""
+    """Replace code, links, emails, paths, dates, times, phone numbers and our own wrapper tags with
+    [[KEEP_n]] tokens the model must preserve."""
     store: dict[str, str] = {}
 
     def repl(m: re.Match) -> str:
+        found = m.group(0)
+        if re.fullmatch(r"[+(]?\d[\d ()-]*\d", found) and sum(c.isdigit() for c in found) < 8:
+            return found  # an ordinary number list, not a phone number: leave it for the model
         key = f"[[KEEP_{start + len(store)}]]"
         store[key] = m.group(0)
         return key

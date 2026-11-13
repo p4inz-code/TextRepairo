@@ -83,6 +83,49 @@ class FixBody(BaseModel):
     action: str
 
 
+class _TooLarge(BaseException):  # not Exception: frameworks must not turn it into a 400
+    pass
+
+
+class BodyLimitMiddleware:
+    """Refuse request bodies over `limit` bytes, even when sent in chunks with no Content-Length."""
+
+    def __init__(self, app, limit: int = MAX_BODY_BYTES) -> None:
+        self.app, self.limit = app, limit
+
+    async def __call__(self, scope, receive, send):
+        if scope["type"] != "http":
+            await self.app(scope, receive, send)
+            return
+        total = 0
+        started = False
+
+        async def limited_receive():
+            nonlocal total
+            msg = await receive()
+            if msg["type"] == "http.request":
+                total += len(msg.get("body", b""))
+                if total > self.limit:
+                    raise _TooLarge()
+            return msg
+
+        async def tracking_send(message):
+            nonlocal started
+            if message["type"] == "http.response.start":
+                started = True
+            await send(message)
+
+        try:
+            await self.app(scope, limited_receive, tracking_send)
+        except _TooLarge:
+            if not started:
+                body = b'{"error":"request too large"}'
+                await send({"type": "http.response.start", "status": 413,
+                            "headers": [(b"content-type", b"application/json"),
+                                        (b"content-length", str(len(body)).encode())]})
+                await send({"type": "http.response.body", "body": body})
+
+
 def sse(obj: dict) -> str:
     return f"data: {json.dumps(obj, ensure_ascii=False)}\n\n"
 
@@ -160,6 +203,7 @@ def create_app(engine: Engine | None = None, token: str | None = None,
 
     app = FastAPI(title=APP_NAME, version=__version__, docs_url=None, redoc_url=None,
                   openapi_url=None, lifespan=lifespan)
+    app.add_middleware(BodyLimitMiddleware, limit=MAX_BODY_BYTES)
     app.state.engine = eng_
     app.state.token = token or secrets.token_urlsafe(24)
     app.state.port = port

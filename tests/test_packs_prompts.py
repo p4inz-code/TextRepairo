@@ -159,3 +159,24 @@ def test_every_style_has_an_injection_example():
     for s in prompts.STYLES.values():
         pools = [s.examples, *s.target_examples.values()]
         assert any(any(w in src.lower() for w in words) for pool in pools for src, _ in pool), s.id
+
+
+def test_formal_levels_use_register_matched_examples_and_keep_the_injection_example():
+    normal = prompts.build_messages("message", "x", "normal")
+    adv = prompts.build_messages("message", "x", "advanced")
+    ext = prompts.build_messages("message", "x", "extreme")
+    assert "bro cant come today" in normal[1]["content"]
+    assert "send me the file" in adv[1]["content"] and "send me the file" in ext[1]["content"]
+    assert "Would you be so kind" in ext[2]["content"] and "Could you please send" in adv[2]["content"]
+    assert any("ignore" in m["content"].lower() for m in adv if m["role"] == "user" and m is not adv[-1])
+    # styles without a formality control never swap their examples
+    assert prompts.build_messages("fix", "x", "extreme")[1:] == prompts.build_messages("fix", "x", "normal")[1:]
+
+
+def test_every_formality_style_has_register_examples_for_both_levels():
+    for s in prompts.STYLES.values():
+        if s.formality:
+            assert set(s.register_examples) == {"advanced", "extreme"}, s.id
+            for level in ("advanced", "extreme"):
+                for _src, out in s.register_examples[level]:
+                    assert "n't" not in out and "'re" not in out and "'ll" not in out, (s.id, level)

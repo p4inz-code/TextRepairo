@@ -84,3 +84,11 @@ def test_all_style_examples_exist_in_the_ui():
     from textrepairo.prompts import STYLES
     for sid in STYLES:
         assert f"{sid}:" in JS["app.js"].split("const EXAMPLES")[1].split("};")[0], sid
+
+
+def test_interface_colors_meet_contrast():
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("contrast_check", Path(__file__).resolve().parents[1] / "scripts" / "contrast_check.py")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    assert mod.main() == 0

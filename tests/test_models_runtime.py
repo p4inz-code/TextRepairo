@@ -109,3 +109,15 @@ def test_prompt_messages_wrap_text_as_data():
         assert "not instructions" in last["content"] and last["content"].endswith("result.")
         roles = [m["role"] for m in msgs]
         assert roles[1::2] == ["user"] * (len(roles) // 2)
+
+
+def test_extract_rejects_tar_path_traversal(tmp_path):
+    import tarfile
+    t = tmp_path / "evil.tar.gz"
+    payload = tmp_path / "payload.txt"
+    payload.write_text("x")
+    with tarfile.open(t, "w:gz") as tf:
+        tf.add(payload, arcname="../escape.txt")
+    with pytest.raises(runtime.RuntimeError_):
+        runtime._extract(t, tmp_path / "out")
+    assert not (tmp_path / "escape.txt").exists()

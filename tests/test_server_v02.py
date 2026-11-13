@@ -247,3 +247,15 @@ def test_open_data_folder_never_takes_a_path(fake_engine, monkeypatch):
     assert c.post("/api/open-data-folder", json={"path": "C:/Windows"}, headers=H).json()["ok"]
     from textrepairo.config import data_dir
     assert seen == [data_dir()]
+
+
+def test_chunked_oversized_body_is_refused(fake_engine):
+    def chunks():
+        for _ in range(40):
+            yield b"x" * 8192  # 320 KB in total, sent without a Content-Length
+
+    r = _client(fake_engine).post("/api/settings", content=chunks(),
+                                  headers={**H, "Content-Type": "application/json"})
+    assert r.status_code == 413
+    ok = _client(fake_engine).post("/api/settings", json={"theme": "dark"}, headers=H)
+    assert ok.status_code == 200

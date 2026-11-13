@@ -337,3 +337,13 @@ def test_cli_history_packs_doctor(capsys):
     assert "en-slang" in out
     code, out, _ = _run_cli(["doctor", "--json"], capsys)
     assert code in (0, 1) and {r["id"] for r in json.loads(out)} >= {"version", "data", "model"}
+
+
+def test_oversized_update_is_refused(release, monkeypatch):
+    release(payload=b"A" * 5000)
+    monkeypatch.setattr(updater, "install_kind", lambda: "installer")
+    monkeypatch.setattr(updater, "MAX_UPDATE_BYTES", 1000)
+    info = updater.check()
+    with pytest.raises(updater.UpdateError, match="larger than expected"):
+        updater.download(info)
+    assert not list(config.updates_dir().glob("*"))

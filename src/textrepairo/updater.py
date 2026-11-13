@@ -36,6 +36,7 @@ from .config import Settings, load_settings, portable_state, save_settings, upda
 
 API_URL = f"https://api.github.com/repos/{REPO}/releases/latest"
 DOWNLOAD_PREFIX = f"https://github.com/{REPO}/releases/download/"
+MAX_UPDATE_BYTES = 600 * 1024 * 1024  # the installer is about 130 MB; refuse anything absurd
 CHECK_INTERVAL_S = 24 * 3600
 STARTUP_DELAY_S = 8.0
 
@@ -171,6 +172,8 @@ def download(info: dict, progress: Callable[[int, int], None] | None = None,
                 for chunk in r.iter_bytes(1024 * 256):
                     if cancel and cancel():
                         raise UpdateError("Download cancelled.")
+                    if done + len(chunk) > MAX_UPDATE_BYTES:
+                        raise UpdateError("The update is larger than expected, so it was not installed.")
                     out.write(chunk)
                     h.update(chunk)
                     done += len(chunk)
