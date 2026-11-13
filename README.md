@@ -53,6 +53,40 @@ The first time you open it, TextRepairo asks you to download one AI model (1 to 
 </tr>
 </table>
 
+## How to use it (3 easy ways)
+
+All three do the same job. Pick the one you like. The full step-by-step guide is in [docs/GUIDE.md](docs/GUIDE.md).
+
+### 1. The app (easiest)
+1. Open **TextRepairo**. The first time, download a model when it asks (pick **Standard**). You only do this once.
+2. **Paste your text** in the left box. It can be messy, full of slang, or in another language.
+3. **Pick a style** (Fix, Professional, Friendly, Email, and more). For formal styles you can also pick how formal: Normal, Advanced or Extremely formal.
+4. Press **Repair text** (or **Ctrl+Enter**). Watch the progress bar.
+5. Read the result on the right. **Changes** shows what was altered. **Copy** copies it.
+
+Your last 100 results are in **History** (clock icon). Something not working? Open **Settings > Doctor**.
+
+### 2. The web page (same screen, in your browser)
+Open a terminal and run:
+
+```bash
+textrepairo serve
+```
+
+It opens a page in your browser. Use it exactly like the app. Only your own computer can open it. Press **Ctrl+C** in the terminal to stop it. (Windows installer: the command is `textrepairo-cli.exe` in the install folder. See the guide.)
+
+### 3. The command line (for files and scripts)
+
+```bash
+textrepairo repair "i dont no wat to do abt this"                       # fix a sentence
+textrepairo repair "cant come tmrw" -m professional --formality advanced  # pick a style
+echo "bro cant come today got fever" | textrepairo repair -m message     # pipe text in
+textrepairo repair -f notes.txt -o fixed.txt                             # fix a file
+textrepairo repair -f a.txt -f b.txt --out-dir fixed/                    # fix many files
+```
+
+More commands: `textrepairo history list`, `textrepairo doctor`, `textrepairo update`, `textrepairo --help`.
+
 ## What it does
 
 - **Eleven styles.** *Fix* (spelling and grammar, keeps your wording), *Professional*, *Friendly*, *Prompt* (turn a rough request into a clear AI prompt), *Compose* (turn scattered notes into a finished message or prompt), *Message*, *Email*, *Casual*, *Concise*, *Persuasive* and *Empathetic*.
@@ -74,20 +108,6 @@ Up to 10,000 characters per repair.
 - No account, no analytics, no crash reports, no telemetry.
 - The only network requests are an optional once-a-day update check (a plain request to this project's GitHub releases, with nothing about you in it) and downloads you start yourself (models from Hugging Face, the engine from GitHub). Both are verified against pinned checksums. Turn updates off under **Settings > Updates**.
 - Details: [PRIVACY.md](PRIVACY.md), [SECURITY.md](SECURITY.md) and [docs/THREAT_MODEL.md](docs/THREAT_MODEL.md).
-
-## Command line
-
-```bash
-textrepairo repair "ngl i cant come tmrw, got a dentist thing" -m professional --formality advanced
-echo "bro cant come today got fever tell sir" | textrepairo repair -m message
-textrepairo repair -f notes.txt -o fixed.txt
-textrepairo repair -f a.txt -f b.txt --out-dir fixed/
-textrepairo repair "..." --json --private       # machine readable, not saved to history
-textrepairo history list
-textrepairo doctor
-```
-
-The web version is `textrepairo serve`. It listens on your computer only.
 
 ## Models
 
@@ -124,7 +144,7 @@ python -m textrepairo serve
 python scripts/build_app.py       # standalone app in dist/
 ```
 
-More in [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) and [CONTRIBUTING.md](CONTRIBUTING.md). Planning documents live in [docs/plans](docs/plans).
+Guide for users: [docs/GUIDE.md](docs/GUIDE.md). For developers: [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) and [CONTRIBUTING.md](CONTRIBUTING.md). Planning documents live in [docs/plans](docs/plans).
 
 ## License
 

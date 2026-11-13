@@ -45,7 +45,7 @@ def test_source_files_carry_license_headers():
 def test_required_documents_exist():
     for name in ("LICENSE", "ADDITIONAL_TERMS.md", "PRIVACY.md", "SECURITY.md", "SUPPORT.md", "ROADMAP.md",
                  "CHANGELOG.md", "CONTRIBUTING.md", "THIRD_PARTY_NOTICES.md", "README.md",
-                 "docs/THREAT_MODEL.md", "docs/PACKS.md", "docs/DEVELOPMENT.md", "docs/EVAL.md"):
+                 "docs/GUIDE.md", "docs/THREAT_MODEL.md", "docs/PACKS.md", "docs/DEVELOPMENT.md", "docs/EVAL.md"):
         assert (ROOT / name).is_file(), name
 
 
