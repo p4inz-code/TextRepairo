@@ -62,7 +62,7 @@ def score(case: dict, out: str) -> dict[str, bool]:
     res["clean"] = bool(out.strip()) and not PREFACE.match(out) and "<text>" not in low
     res["english"] = non_latin_ratio(out) < 0.1
     ratio = len(out) / max(1, len(inp))
-    wide = case["mode"] in ("prompt", "compose", "email")
+    wide = case["mode"] in ("prompt", "compose", "email") or case.get("formality") == "extreme"
     cjk = non_latin_ratio(inp) > 0.3  # Chinese or Japanese text is short, so English needs more characters
     res["size"] = 0.25 <= ratio <= (12.0 if wide else 8.0 if cjk else 3.5) or len(inp) < 15
     if case.get("keep"):
