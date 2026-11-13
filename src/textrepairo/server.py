@@ -38,6 +38,7 @@ from . import updater as updater_mod
 from .config import (HISTORY_LIMIT, MAX_TEXT_CHARS, bundled_data_dir, data_dir, data_mode, load_settings,
                      portable_state, save_settings, web_dir)
 from .engine import Engine, EngineError
+from .errors import public_message
 from .prompts import (FORMALITY, LANGUAGES, PROMPT_VERSION, STYLES, formality_catalog, resolve_style,
                       style_catalog)
 from .runtime import (BACKENDS, RuntimeError_, asset_names, choose_backend, download_runtime,
@@ -154,7 +155,7 @@ async def run_blocking_job(work: Callable[[Callable[[int, int], None], Callable[
                 ev["result"] = result
             loop.call_soon_threadsafe(queue.put_nowait, ev)
         except Exception as e:  # noqa: BLE001 - reported to the UI
-            loop.call_soon_threadsafe(queue.put_nowait, {"event": "error", "message": str(e)})
+            loop.call_soon_threadsafe(queue.put_nowait, {"event": "error", "message": public_message(e)})
 
     t = threading.Thread(target=runner, daemon=True)
     t.start()
@@ -337,11 +338,11 @@ def create_app(engine: Engine | None = None, token: str | None = None,
                     if await request.is_disconnected():
                         return
             except EngineError as e:
-                yield sse({"event": "error", "message": str(e)})
+                yield sse({"event": "error", "message": public_message(e)})
             except asyncio.CancelledError:
                 raise
             except Exception as e:  # noqa: BLE001
-                yield sse({"event": "error", "message": f"Unexpected error: {e}"})
+                yield sse({"event": "error", "message": public_message(e)})
 
         return StreamingResponse(gen(), media_type="text/event-stream")
 
@@ -403,7 +404,7 @@ def create_app(engine: Engine | None = None, token: str | None = None,
         try:
             p = await asyncio.to_thread(packs_mod.import_pack, body.path)
         except packs_mod.PackError as e:
-            return JSONResponse({"error": str(e)}, status_code=400)
+            return JSONResponse({"error": public_message(e)}, status_code=400)
         return {"id": p.id, "entries": len(p.entries)}
 
     @app.post("/api/packs/remove")
@@ -411,7 +412,7 @@ def create_app(engine: Engine | None = None, token: str | None = None,
         try:
             return {"ok": packs_mod.remove_pack(body.id)}
         except packs_mod.PackError as e:
-            return JSONResponse({"error": str(e)}, status_code=400)
+            return JSONResponse({"error": public_message(e)}, status_code=400)
 
     # ------------------------------------------------------------ models + runtime
     @app.post("/api/models/download")
@@ -431,7 +432,7 @@ def create_app(engine: Engine | None = None, token: str | None = None,
         try:
             models_mod.remove_model(body.id)
         except models_mod.ModelError as e:
-            return JSONResponse({"error": str(e)}, status_code=400)
+            return JSONResponse({"error": public_message(e)}, status_code=400)
         return {"ok": True}
 
     @app.post("/api/models/import")
@@ -439,7 +440,7 @@ def create_app(engine: Engine | None = None, token: str | None = None,
         try:
             p = await asyncio.to_thread(models_mod.import_model, body.path)
         except models_mod.ModelError as e:
-            return JSONResponse({"error": str(e)}, status_code=400)
+            return JSONResponse({"error": public_message(e)}, status_code=400)
         return {"id": f"custom:{p.name}"}
 
     @app.post("/api/runtime/install")
@@ -460,7 +461,7 @@ def create_app(engine: Engine | None = None, token: str | None = None,
         try:
             await asyncio.to_thread(eng.ensure_started)
         except EngineError as e:
-            return JSONResponse({"error": str(e)}, status_code=400)
+            return JSONResponse({"error": public_message(e)}, status_code=400)
         return {"ok": True}
 
     # ------------------------------------------------------------ doctor
@@ -482,7 +483,7 @@ def create_app(engine: Engine | None = None, token: str | None = None,
         try:
             res = await eng.repair("teh quick brown fox jump over lazy dog", "fix")
         except EngineError as e:
-            return JSONResponse({"error": str(e)}, status_code=400)
+            return JSONResponse({"error": public_message(e)}, status_code=400)
         total = time.time() - t0
         tps = round(res.tokens / res.seconds, 1) if res.seconds > 0 and res.tokens else None
         return {"ok": bool(res.text.strip()), "seconds": round(total, 1), "tokens": res.tokens,
@@ -525,7 +526,7 @@ def create_app(engine: Engine | None = None, token: str | None = None,
         try:
             _open_folder(data_dir())
         except OSError as e:
-            return {"ok": False, "error": str(e)}
+            return {"ok": False, "error": public_message(e)}
         return {"ok": True}
 
     # ------------------------------------------------------------ updates
@@ -542,7 +543,7 @@ def create_app(engine: Engine | None = None, token: str | None = None,
         try:
             info = await asyncio.to_thread(updater_mod.check)
         except updater_mod.UpdateError as e:
-            return JSONResponse({"error": str(e)}, status_code=502)
+            return JSONResponse({"error": public_message(e)}, status_code=502)
         updater_mod.record_check()
         app.state.update_info = info
         return info
@@ -571,7 +572,7 @@ def create_app(engine: Engine | None = None, token: str | None = None,
             updater_mod.clear_pending()
             updater_mod.launch_installer(Path(path))
         except (updater_mod.UpdateError, OSError) as e:
-            return JSONResponse({"error": str(e)}, status_code=400)
+            return JSONResponse({"error": public_message(e)}, status_code=400)
         threading.Timer(1.0, app.state.request_exit).start()
         return {"ok": True}
 

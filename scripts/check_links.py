@@ -13,6 +13,7 @@ from __future__ import annotations
 import re
 import sys
 import urllib.error
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -50,7 +51,8 @@ def main() -> int:
     if online:
         bad = 0
         for url, where in sorted(external.items()):
-            if "<" in url or "{" in url or "shields.io" in url or "localhost" in url:
+            host = urllib.parse.urlparse(url).hostname or ""
+            if "<" in url or "{" in url or host.endswith("shields.io") or host in ("localhost", "127.0.0.1"):
                 continue
             try:
                 req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "TextRepairo-linkcheck"})

@@ -31,6 +31,7 @@ from typing import Callable
 import httpx
 
 from .config import Settings, bundled_runtime_dir, runtime_dir
+from .errors import AppError
 from .hardware import Hardware
 
 # Pinned, tested llama.cpp release. Bump deliberately after testing.
@@ -58,7 +59,7 @@ ASSET_SHA256: dict[str, str] = {
 }
 
 
-class RuntimeError_(RuntimeError):
+class RuntimeError_(AppError, RuntimeError):
     pass
 
 

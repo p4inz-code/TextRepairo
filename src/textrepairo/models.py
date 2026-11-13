@@ -8,6 +8,8 @@ GGUF file themselves ("bring your own model") at their own risk.
 
 from __future__ import annotations
 
+import re
+
 import hashlib
 import shutil
 import urllib.error
@@ -17,6 +19,7 @@ from pathlib import Path
 from typing import Callable, Iterator
 
 from .config import models_dir
+from .errors import AppError, safe_user_file
 
 
 @dataclass(frozen=True)
@@ -82,7 +85,7 @@ REGISTRY: list[ModelSpec] = [
 BY_ID = {m.id: m for m in REGISTRY}
 
 
-class ModelError(RuntimeError):
+class ModelError(AppError, RuntimeError):
     pass
 
 
@@ -197,15 +200,11 @@ def download_model(
 
 def import_model(src: str | Path) -> Path:
     """Copy a user-supplied .gguf file into the models folder."""
-    src = Path(src).expanduser()
-    if not src.is_file():
-        raise ModelError(f"File not found: {src}")
-    if src.suffix.lower() != ".gguf":
-        raise ModelError("Only .gguf model files can be imported.")
+    src = safe_user_file(src, {".gguf"}, ModelError, "model (.gguf)")
     with open(src, "rb") as f:
         if f.read(4) != b"GGUF":
             raise ModelError("This file is not a valid GGUF model.")
-    dest = models_dir() / src.name
+    dest = models_dir() / re.sub(r"[^\w.\-]", "_", src.name)
     if dest.resolve() != src.resolve():
         shutil.copy2(src, dest)
     return dest

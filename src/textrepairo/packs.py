@@ -24,6 +24,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .config import bundled_data_dir, packs_dir
+from .errors import AppError, safe_user_file
 
 MAX_HINTS = 20
 MAX_PACK_BYTES = 256 * 1024
@@ -36,7 +37,7 @@ _CONTROL = re.compile(r"[\x00-\x1f\x7f]")
 _ID = re.compile(r"^[a-z0-9][a-z0-9_-]{0,39}$")
 
 
-class PackError(ValueError):
+class PackError(AppError, ValueError):
     pass
 
 
@@ -172,22 +173,23 @@ def list_packs() -> list[dict]:
 
 def import_pack(path: str | Path) -> Pack:
     """Validate a pack file and copy it into the user packs folder."""
-    src = Path(path)
-    if not src.is_file() or src.suffix.lower() != ".json":
-        raise PackError("Choose a .json pack file.")
+    src = safe_user_file(path, {".json"}, PackError, "pack (.json)")
     pack = _read(src, "user")
     if any(p.id == pack.id and p.source == "bundled" for p in load_packs()):
         raise PackError(f"A built-in pack already uses the id '{pack.id}'. Change the id and try again.")
+    # Write our own validated copy (never the user's file byte for byte), named from the checked id.
     dest = packs_dir() / f"{pack.id}.json"
-    shutil.copyfile(src, dest)
+    dest.write_text(json.dumps({"id": pack.id, "name": pack.name, "version": pack.version,
+                                "entries": [list(e) if e[2] else list(e[:2]) for e in pack.entries]},
+                               ensure_ascii=False, indent=1), encoding="utf-8")
     return pack
 
 
 def remove_pack(pack_id: str) -> bool:
     if not _ID.match(pack_id):
         raise PackError("Bad pack id.")
-    target = packs_dir() / f"{pack_id}.json"
-    if target.is_file():
-        target.unlink()
-        return True
+    for existing in packs_dir().glob("*.json"):  # only files that are really in the packs folder
+        if existing.stem == pack_id:
+            existing.unlink()
+            return True
     return False

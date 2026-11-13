@@ -14,6 +14,7 @@ import httpx
 
 from . import models as models_mod
 from . import packs
+from .errors import AppError
 from .config import MAX_TEXT_CHARS, Settings, load_settings
 from .hardware import Hardware, detect
 from .humanize import humanize_pass
@@ -24,7 +25,7 @@ from .textproc import (check_output, clean_output, diff_ops, hide_partial_placeh
                        mask, split_chunks, unmask)
 
 
-class EngineError(RuntimeError):
+class EngineError(AppError, RuntimeError):
     pass
 
 

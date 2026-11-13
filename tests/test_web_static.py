@@ -3,6 +3,7 @@
 """Static guards for the web UI: CSP-safe, no native controls, no external resources."""
 
 import re
+from html.parser import HTMLParser
 from pathlib import Path
 
 import pytest
@@ -15,11 +16,30 @@ JS = {p.name: p.read_text(encoding="utf-8") for p in WEB.glob("*.js")}
 CSS = (WEB / "style.css").read_text(encoding="utf-8")
 
 
+class _Audit(HTMLParser):
+    """Collects anything in the page that would need an inline-code exception in the CSP."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.inline_scripts = 0
+        self.style_tags = 0
+        self.bad_attrs: list[str] = []
+
+    def handle_starttag(self, tag, attrs):
+        names = {k.lower(): v for k, v in attrs}
+        if tag == "script" and "src" not in names:
+            self.inline_scripts += 1
+        if tag == "style":
+            self.style_tags += 1
+        for k in names:
+            if k == "style" or (k.startswith("on") and len(k) > 2):
+                self.bad_attrs.append(f"{tag}[{k}]")
+
+
 def test_html_has_no_inline_script_style_or_handlers():
-    assert not re.search(r"<script(?![^>]*\bsrc=)[^>]*>", HTML)
-    assert not re.search(r"<style\b", HTML)
-    assert not re.search(r"\sstyle\s*=", HTML)
-    assert not re.search(r"\son[a-z]+\s*=", HTML)
+    audit = _Audit()
+    audit.feed(HTML)
+    assert audit.inline_scripts == 0 and audit.style_tags == 0 and not audit.bad_attrs, vars(audit)
 
 
 @pytest.mark.parametrize("name", sorted(JS))

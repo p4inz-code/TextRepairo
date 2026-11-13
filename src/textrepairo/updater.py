@@ -33,6 +33,7 @@ import httpx
 
 from . import REPO, __version__
 from .config import Settings, load_settings, portable_state, save_settings, updates_dir
+from .errors import AppError
 
 API_URL = f"https://api.github.com/repos/{REPO}/releases/latest"
 DOWNLOAD_PREFIX = f"https://github.com/{REPO}/releases/download/"
@@ -43,7 +44,7 @@ STARTUP_DELAY_S = 8.0
 _VERSION = re.compile(r"(\d+)\.(\d+)\.(\d+)")
 
 
-class UpdateError(RuntimeError):
+class UpdateError(AppError, RuntimeError):
     pass
 
 
