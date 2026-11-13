@@ -13,10 +13,24 @@ import webbrowser
 
 import uvicorn
 
-from . import APP_NAME
+from . import APP_NAME, COFFEE_URL, DISCORD_URL, DONATE_URL, PORTFOLIO_URL, REPO_URL
 from .config import begin_session, end_session
 from .server import create_app
 from .updater import apply_pending
+
+
+_EXTERNAL_OK = (REPO_URL, PORTFOLIO_URL, DISCORD_URL, DONATE_URL, COFFEE_URL)
+
+
+def is_allowed_external(url: str) -> bool:
+    """Only our own project links may be opened from the app window."""
+    if not isinstance(url, str) or not url.startswith("https://"):
+        return False
+    for base in _EXTERNAL_OK:
+        b = base.rstrip("/")
+        if url.rstrip("/") == b or url.startswith(b + "/") or url.startswith(b + "?"):
+            return True
+    return False
 
 
 def _free_port() -> int:
@@ -119,6 +133,12 @@ def run_desktop() -> int:
 
                 def pick_pack(self) -> str | None:
                     return self._pick("Slang pack", "*.json")
+
+                def open_url(self, url: str) -> bool:
+                    if not is_allowed_external(url):
+                        return False
+                    webbrowser.open(url)
+                    return True
 
             holder["win"] = webview.create_window(
                 APP_NAME, srv.url, width=1120, height=780, min_size=(720, 560), js_api=_Api())

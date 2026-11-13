@@ -37,6 +37,24 @@ RELEASE_URL = "https://github.com/ggml-org/llama.cpp/releases/download/{tag}/{as
 
 BACKENDS = ("cpu", "vulkan", "cuda", "metal")
 
+# SHA-256 of every release asset we download, taken from the GitHub release page for the pinned tag.
+# An asset that is not listed here is refused, and a file that does not match is deleted.
+ASSET_SHA256: dict[str, str] = {
+    "cudart-llama-b12360-bin-ubuntu-cuda-12.8-x64.tar.gz": "be7ec0dba5eac064460b34c02e4010deb14eb8bfba95ae9b508ae4c0a1983b5f",
+    "cudart-llama-bin-win-cuda-12.4-x64.zip": "8c79a9b226de4b3cacfd1f83d24f962d0773be79f1e7b75c6af4ded7e32ae1d6",
+    "llama-b12360-bin-macos-arm64.tar.gz": "e815561e9621c606388d4538101d56fcf317cdec6ce8f2bbd1bf14f0df29925e",
+    "llama-b12360-bin-macos-x64.tar.gz": "ed329ff7f4048dbfbc401909926a6c6f49114fc7cb7860ed9c7976fadcc11a34",
+    "llama-b12360-bin-ubuntu-arm64.tar.gz": "a8e2783d74e3e77c4f5e31fbe88e6365c98dffbeb203a1031737121764b62a2a",
+    "llama-b12360-bin-ubuntu-cuda-12.8-x64.tar.gz": "1874218dad4a58b5187e01a65de1cdb68218d93a510bca59a976ccb47fafed85",
+    "llama-b12360-bin-ubuntu-vulkan-arm64.tar.gz": "e475abf45095ebf3db483c0bfe1a7e258881dee5c1efc8ec767158653bce459c",
+    "llama-b12360-bin-ubuntu-vulkan-x64.tar.gz": "2133682fba36e101ec1059ee646287bd1768916d3d0479fa4d6135f40f02e309",
+    "llama-b12360-bin-ubuntu-x64.tar.gz": "b60dc211e4ba206bb04bbc9eb06294364c43d0aab8fc308c44a361477466ba4c",
+    "llama-b12360-bin-win-cpu-arm64.zip": "269794d34c6d8f5c827f4558442ee28ae07b03a5daf64da8ce112ea477bef4fc",
+    "llama-b12360-bin-win-cpu-x64.zip": "eae1726047e0eaa707b1302929d196c999b96c2f243b21aea6e93bcebacc4e17",
+    "llama-b12360-bin-win-cuda-12.4-x64.zip": "70c0a244acf39f2f3fd8975a8447884e03fd35f499bf7dc284113845e894c382",
+    "llama-b12360-bin-win-vulkan-x64.zip": "42a6f9df608b99c1c83fcaf77284a516e3f167b32a4690f4e4e364c377547055",
+}
+
 
 class RuntimeError_(RuntimeError):
     pass
@@ -142,6 +160,23 @@ def _extract(archive: Path, dest: Path) -> None:
                 p.chmod(p.stat().st_mode | 0o755)
 
 
+def _verify_asset(name: str, archive: Path) -> None:
+    """Refuse unknown assets and delete anything whose SHA-256 differs from the pinned value."""
+    import hashlib
+    expected = ASSET_SHA256.get(name)
+    if not expected:
+        archive.unlink(missing_ok=True)
+        raise RuntimeError_(f"'{name}' is not a known llama.cpp asset for this version, so it was not installed.")
+    h = hashlib.sha256()
+    with open(archive, "rb") as f:
+        while chunk := f.read(1024 * 1024):
+            h.update(chunk)
+    if h.hexdigest() != expected:
+        archive.unlink(missing_ok=True)
+        raise RuntimeError_(f"The downloaded engine file '{name}' does not match its published checksum, "
+                            "so it was deleted and nothing was installed.")
+
+
 def download_runtime(
     backend: str,
     progress: Callable[[int, int], None] | None = None,
@@ -174,6 +209,7 @@ def download_runtime(
             except (urllib.error.URLError, OSError) as e:
                 shutil.rmtree(dest, ignore_errors=True)
                 raise RuntimeError_(f"Runtime download failed (are you online?): {e}") from e
+            _verify_asset(name, archive)
             _extract(archive, dest)
     binary = _find_binary(dest)
     if not binary:
@@ -296,6 +332,9 @@ class LlamaServer:
                 "-t", str(threads),
                 "-np", "1",
                 "--no-webui",
+                # Small batches make the engine report real "reading your text" progress every
+                # 128 tokens. Speed is the same and it keeps CPU bursts short and the PC cooler.
+                "-b", "128", "-ub", "128",
             ]
             if backend in ("vulkan", "cuda", "metal"):
                 cmd += ["-ngl", "99" if settings.gpu_layers < 0 else str(settings.gpu_layers)]

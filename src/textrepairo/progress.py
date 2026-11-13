@@ -17,7 +17,7 @@ from __future__ import annotations
 import math
 import time
 
-READING_SHARE = 0.10  # share of a chunk's bar used by the reading phase
+READING_SHARE = 0.20  # share of a chunk's bar used by the reading phase
 WRITING_CAP = 0.99  # a chunk's writing part never reports more than this before it finishes
 
 

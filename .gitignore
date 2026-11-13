@@ -13,3 +13,4 @@ packaging/build/
 .DS_Store
 *.spec.bak
 eval/_*.jsonl
+.uitest-home/
