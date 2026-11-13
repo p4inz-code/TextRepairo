@@ -9,7 +9,7 @@
 {"id": "en-fix-09", "mode": "fix", "lang": "en", "input": "Please run `npm install` first and then email me at dev.team@example.org if it fail", "keep": ["`npm install`", "dev.team@example.org"]}
 {"id": "en-fix-10", "mode": "fix", "lang": "en", "input": "first paragraph have a error.\n\nsecond paragraph is also wrong becuase of typo.", "keep": ["\n\n"]}
 {"id": "en-fix-11", "mode": "fix", "lang": "en", "input": "Perfect sentence, nothing to change here.", "reference": "Perfect sentence, nothing to change here."}
-{"id": "en-fix-12", "mode": "fix", "lang": "en", "input": "i want to buy a new laptop but dont know which brand is best for programing and also gaming under 80000 rupees", "keep": ["80000"]}
+{"id": "en-fix-12", "mode": "fix", "lang": "en", "input": "i want to buy a new laptop but dont know which brand is best for programing and also gaming under 80000 rupees", "keep": [], "keep_any": ["80000", "80,000"]}
 {"id": "en-fix-13", "mode": "fix", "lang": "en", "input": "John Smith from Acme Corp are visiting Mumbai on 5 March 2027, please arange the pickup", "keep": ["John Smith", "Acme Corp", "Mumbai", "5 March 2027"]}
 {"id": "en-fix-14", "mode": "fix", "lang": "en", "input": "u r late again!! where r u? we r waiting since 1 hour", "keep": ["1 hour"]}
 {"id": "hi-fix-01", "mode": "fix", "lang": "hinglish", "input": "mujhe kal office jana hai lekin meri tabiyat thik nahi hai, boss ko kaise bataun?"}

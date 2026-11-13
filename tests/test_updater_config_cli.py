@@ -360,3 +360,40 @@ def test_update_check_sends_nothing_about_the_user(release):
     for leak in ("cookie", "authorization", "x-token", "referer", "x-user", "x-machine"):
         assert leak not in h, leak
     assert r.hits == ["latest"]  # a not-newer or manual-build check contacts nothing else
+
+
+def test_cli_progress_helpers():
+    from textrepairo import cli
+    assert cli._bar(0) == "-" * 24 and cli._bar(100) == "#" * 24 and cli._bar(50).count("#") == 12
+    assert cli._bar(None) == "-" * 24
+    assert cli._fmt_eta(None) == "" and cli._fmt_eta(30) == "about 30 s left" and cli._fmt_eta(150) == "about 2 min left"
+
+
+def test_cli_update_reports_a_newer_version(release, capsys):
+    release()
+    code, out, _ = _run_cli(["update"], capsys)
+    assert code == 0 and "newer version is available: 9.9.9" in out
+    assert config.load_settings().last_update_check > 0  # the check is remembered for the daily limit
+
+
+def test_cli_update_up_to_date(release, capsys):
+    release(version="0.0.1")
+    code, out, _ = _run_cli(["update"], capsys)
+    assert code == 0 and "up to date" in out
+
+
+def test_cli_update_install_refuses_manual_builds(release, capsys):
+    release()
+    code, _, err = _run_cli(["update", "--install"], capsys)
+    assert code == 1 and "cannot update itself" in err
+
+
+def test_cli_rejects_unknown_formality_and_style(capsys):
+    from textrepairo import cli
+    for argv in (["repair", "x", "--formality", "loud"], ["repair", "x", "-m", "shout"]):
+        try:
+            cli.main(argv)
+        except SystemExit as e:
+            assert e.code == 2
+        else:
+            raise AssertionError("argparse should have rejected " + " ".join(argv))
