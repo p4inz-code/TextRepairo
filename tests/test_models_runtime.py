@@ -66,9 +66,9 @@ def test_asset_names_cover_platforms():
 
 def test_choose_backend(hw):
     from dataclasses import replace
-    assert runtime.choose_backend("auto", hw) == "cpu"
-    gpu = replace(hw, gpu_vendor="nvidia", gpu_name="RTX")
     key = runtime.platform_key()
+    assert runtime.choose_backend("auto", hw) == ("metal" if key == "macos-arm64" else "cpu")
+    gpu = replace(hw, gpu_vendor="nvidia", gpu_name="RTX")
     expected = "vulkan" if runtime.asset_names("vulkan", key) else "cpu"
     if not key.startswith("macos-arm64"):
         assert runtime.choose_backend("auto", gpu) == expected
