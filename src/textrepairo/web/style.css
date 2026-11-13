@@ -130,8 +130,8 @@ kbd {
 .modes.more { margin-top: 10px; grid-template-columns: repeat(4, 1fr); }
 .more-row { display: flex; justify-content: flex-start; margin: 6px 0 2px; }
 .more-row .link { display: inline-flex; align-items: center; gap: 6px; }
-.more-row .link::after { content: ""; width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg) translateY(-2px); transition: transform .15s; }
-.more-row .link[aria-expanded="true"]::after { transform: rotate(-135deg) translate(-2px, 0); }
+.more-row .link::after { content: ""; width: 7px; height: 7px; margin-top: -4px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform .15s, margin .15s; }
+.more-row .link[aria-expanded="true"]::after { margin-top: 3px; transform: rotate(225deg); }
 .mode {
   text-align: left; padding: 12px 14px; border-radius: 12px; border: 1px solid var(--line);
   background: var(--surface); display: grid; gap: 2px; position: relative;

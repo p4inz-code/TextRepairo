@@ -1,3 +1,5 @@
+; SPDX-License-Identifier: GPL-3.0-or-later
+; Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 ; Inno Setup script. Build: iscc /DAppVersion=0.2.0 packaging\windows\installer.iss
 #ifndef AppVersion
   #define AppVersion "0.0.0"

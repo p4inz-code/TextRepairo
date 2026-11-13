@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 """Model registry, downloads and local model files.
 
 Only permissively licensed models (Apache-2.0 / MIT) are listed. Users can import any

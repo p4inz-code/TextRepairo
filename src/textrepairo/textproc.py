@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 """Pure text helpers: chunking, protected spans, output cleanup, checks and diffs."""
 
 from __future__ import annotations

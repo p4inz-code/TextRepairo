@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 # PyInstaller spec: one folder with a windowed app (TextRepairo) and a console CLI (textrepairo).
 # Build with: python scripts/build_app.py
 import sys

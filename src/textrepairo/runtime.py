@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 """llama.cpp runtime: locate/download the llama-server binary and manage its process.
 
 Reference: https://github.com/ggml-org/llama.cpp (MIT). We run the official prebuilt

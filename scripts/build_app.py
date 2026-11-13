@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 """Build the standalone app with PyInstaller.
 
     python scripts/build_app.py            # bundles the CPU (or Metal) llama.cpp engine

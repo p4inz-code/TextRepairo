@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 """Render the app icon (PNG, ICO, ICNS) from code. Needs Pillow."""
 
 from pathlib import Path

@@ -5,11 +5,11 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "textrepairo"
 dynamic = ["version"]
-description = "Offline, open-source tool that turns messy text in any language into proper English (fix, formal, friendly, prompt style). Runs a local LLM, no internet needed after setup."
+description = "Offline, open-source tool that turns messy text in any language into clear, natural English (11 styles, 3 formality levels). Runs a local LLM, no internet needed after setup."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "GPL-3.0-or-later" }
-authors = [{ name = "TextRepairo contributors" }]
+authors = [{ name = "Atharva Patil, P4inz Interactive Labs" }]
 keywords = ["grammar", "llm", "offline", "llama.cpp", "writing", "translation"]
 classifiers = [
   "Development Status :: 4 - Beta",
@@ -27,7 +27,7 @@ dependencies = [
 
 [project.optional-dependencies]
 desktop = ["pywebview>=5.0"]
-dev = ["pytest>=8", "pytest-asyncio>=0.23", "pyinstaller>=6.5", "pillow>=10"]
+dev = ["pytest>=8", "pytest-asyncio>=0.23", "pyinstaller>=6.5", "pillow>=10", "pyyaml>=6"]
 
 [project.scripts]
 textrepairo = "textrepairo.cli:main"
@@ -38,6 +38,8 @@ textrepairo-gui = "textrepairo.cli:gui_main"
 [project.urls]
 Homepage = "https://github.com/p4inz-code/TextRepairo"
 Issues = "https://github.com/p4inz-code/TextRepairo/issues"
+Changelog = "https://github.com/p4inz-code/TextRepairo/blob/main/CHANGELOG.md"
+Portfolio = "https://atharvapatil.tech"
 
 [tool.setuptools.dynamic]
 version = { attr = "textrepairo.__version__" }
@@ -46,7 +48,7 @@ version = { attr = "textrepairo.__version__" }
 where = ["src"]
 
 [tool.setuptools.package-data]
-textrepairo = ["web/*", "data/*.json"]
+textrepairo = ["web/*", "data/packs/*.json"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

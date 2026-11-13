@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 from textrepairo.textproc import (check_output, clean_output, diff_ops, mask, non_latin_ratio,
                                   split_chunks, unmask)
 

@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 """Quality harness: run the cases through a real local model and score them.
 
     python eval/run_eval.py --model standard --threads 4 --limit 20

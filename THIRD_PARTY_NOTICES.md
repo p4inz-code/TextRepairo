@@ -24,6 +24,14 @@ Models are downloaded by the user on request and are not part of the source repo
 | [pywebview](https://github.com/r0x0r/pywebview) (desktop window) | BSD-3-Clause |
 | [PyInstaller](https://github.com/pyinstaller/pyinstaller) (build only) | GPL-2.0-or-later with the bootloader exception |
 | [Pillow](https://github.com/python-pillow/Pillow) (icon generation, build only) | HPND |
+| [cyclonedx-bom](https://github.com/CycloneDX/cyclonedx-python) (release SBOM, build only) | Apache-2.0 |
+| [pip-audit](https://github.com/pypa/pip-audit) (CI only) | Apache-2.0 |
+| Python standard library, including `sqlite3` (history) | PSF License; SQLite is public domain |
+
+## Original work in this repository
+
+- The slang and context packs (`src/textrepairo/data/packs/`), the prompt wording, the "write like a person" rules and the evaluation cases are original work of the TextRepairo authors, released under the project license. They were written from the authors' own knowledge. No text was copied from Urban Dictionary, other online dictionaries or the humanizer skill. That skill's description of common AI-writing patterns (itself based on observations published by Wikipedia editors, "Signs of AI writing") informed which kinds of phrases to avoid. The short pattern list in `src/textrepairo/humanize.py` was written independently.
+- The additional terms in ADDITIONAL_TERMS.md follow the pattern used by the author's other project, kinoz.
 
 ## Ideas and patterns referenced
 

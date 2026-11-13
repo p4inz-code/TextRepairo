@@ -1,3 +1,5 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 """PyInstaller entry point for both the GUI and the CLI executables."""
 
 import multiprocessing

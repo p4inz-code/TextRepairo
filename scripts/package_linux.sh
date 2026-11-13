@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 # Package dist/TextRepairo (PyInstaller output) as .tar.gz, .deb and .AppImage.
 # Usage: scripts/package_linux.sh <version>
 set -euo pipefail
