@@ -52,7 +52,7 @@ def main() -> int:
         bad = 0
         for url, where in sorted(external.items()):
             host = urllib.parse.urlparse(url).hostname or ""
-            if "<" in url or "{" in url or host.endswith("shields.io") or host in ("localhost", "127.0.0.1"):
+            if "<" in url or "{" in url or host in ("shields.io", "img.shields.io") or host in ("localhost", "127.0.0.1"):
                 continue
             try:
                 req = urllib.request.Request(url, method="HEAD", headers={"User-Agent": "TextRepairo-linkcheck"})
