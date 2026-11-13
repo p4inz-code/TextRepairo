@@ -27,6 +27,7 @@ from pathlib import Path
 
 from textrepairo.config import load_settings
 from textrepairo.engine import Engine, EngineError
+from textrepairo.humanize import ai_tell_score
 from textrepairo.textproc import non_latin_ratio
 
 HERE = Path(__file__).parent
@@ -93,8 +94,9 @@ async def run(args: argparse.Namespace) -> int:
             checks = score(case, out)
             sim = similarity(out, case["reference"]) if case.get("reference") else None
             ok = all(checks.values())
+            tell = ai_tell_score(case["input"], out)
             rows.append({"id": case["id"], "mode": case["mode"], "lang": case["lang"], "ok": ok,
-                         "checks": checks, "similarity": sim, "seconds": secs,
+                         "checks": checks, "similarity": sim, "seconds": secs, "ai_tell": tell,
                          "input": case["input"], "output": out})
             flag = "PASS" if ok else "FAIL"
             print(f"[{i:>3}/{len(cases)}] {flag} {case['id']:<14} {secs:5.1f}s", flush=True)
@@ -119,6 +121,13 @@ async def run(args: argparse.Namespace) -> int:
         print(f"by {name}: " + "  ".join(f"{k}={sum(v)}/{len(v)}" for k, v in sorted(group.items())))
     if sims:
         print(f"fix similarity to reference (avg): {sum(sims) / len(sims):.2f}")
+    tells: dict[str, list[float]] = defaultdict(list)
+    for r in rows:
+        tells[r["mode"]].append(r["ai_tell"])
+    allt = [r["ai_tell"] for r in rows]
+    print("ai-tell per 100 words (lower is better): overall "
+          f"{sum(allt) / max(1, len(allt)):.2f}  " + "  ".join(
+              f"{k}={sum(v) / len(v):.2f}" for k, v in sorted(tells.items())))
     out_dir = HERE / "results"
     out_dir.mkdir(exist_ok=True)
     out_file = out_dir / f"{args.model.replace(':', '_')}-{int(time.time())}.json"

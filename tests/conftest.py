@@ -41,6 +41,17 @@ def make_fake_llama(reply):
     async def health():
         return {"status": "ok"}
 
+    app.state.finish = "stop"
+    app.state.tokenize_ok = True
+
+    @app.post("/tokenize")
+    async def tokenize(request: Request):
+        body = await request.json()
+        if not app.state.tokenize_ok:
+            from fastapi.responses import JSONResponse
+            return JSONResponse({"error": "nope"}, status_code=404)
+        return {"tokens": list(range(max(1, len(body.get("content", "")) // 4)))}
+
     @app.post("/v1/chat/completions")
     async def chat(request: Request):
         body = await request.json()
@@ -48,9 +59,13 @@ def make_fake_llama(reply):
         text = reply(body["messages"])
 
         async def gen():
+            for done in (40, 100):  # like llama-server's return_progress chunks
+                pp = {"total": 100, "cache": 0, "processed": done, "time_ms": 1}
+                yield "data: " + json.dumps({"choices": [], "prompt_progress": pp}) + "\n\n"
             for i in range(0, len(text), 5):
                 piece = text[i:i + 5]
                 yield "data: " + json.dumps({"choices": [{"delta": {"content": piece}}]}) + "\n\n"
+            yield "data: " + json.dumps({"choices": [{"delta": {}, "finish_reason": app.state.finish}]}) + "\n\n"
             yield "data: [DONE]\n\n"
 
         return StreamingResponse(gen(), media_type="text/event-stream")
@@ -89,24 +104,38 @@ class FakeServer:
         self.thread.join(timeout=5)
 
 
+def _echo_reply(messages):
+    last = messages[-1]["content"]
+    body = last.removeprefix("<text>\n").split("\n</text>")[0]
+    return f"Fixed: {body}" if "Fixed" not in body else body
+
+
 @pytest.fixture
-def fake_engine(isolated_home, hw, monkeypatch):
-    """Engine wired to a fake llama server that upper-cases nothing: echoes the <text> body."""
+def engine_factory(isolated_home, hw, monkeypatch):
+    """Build engines wired to fake llama servers with a custom reply function."""
     from textrepairo import engine as engine_mod
+    from textrepairo import server as server_mod
     from textrepairo.config import Settings, models_dir, save_settings
 
-    def reply(messages):
-        last = messages[-1]["content"]
-        body = last.removeprefix("<text>\n").split("\n</text>")[0]
-        return f"Fixed: {body}" if "Fixed" not in body else body
-
-    fake = FakeServer(reply)
+    made: list[FakeServer] = []
     (models_dir() / "fake.gguf").write_bytes(b"GGUF" + b"\0" * 16)
     save_settings(Settings(model_id="custom:fake.gguf"))
     monkeypatch.setattr(engine_mod, "find_runtime", lambda backend: Path("llama-server"))
-    from textrepairo import server as server_mod
     monkeypatch.setattr(server_mod, "find_runtime", lambda backend: Path("llama-server"))
-    eng = engine_mod.Engine(server=fake, hardware=hw)
-    eng.fake = fake
-    yield eng
-    fake.close()
+
+    def make(reply=_echo_reply):
+        fake = FakeServer(reply)
+        made.append(fake)
+        eng = engine_mod.Engine(server=fake, hardware=hw)
+        eng.fake = fake
+        return eng
+
+    yield make
+    for f in made:
+        f.close()
+
+
+@pytest.fixture
+def fake_engine(engine_factory):
+    """Engine wired to a fake llama server that echoes the <text> body."""
+    return engine_factory()

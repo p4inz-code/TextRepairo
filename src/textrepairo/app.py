@@ -1,7 +1,10 @@
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (C) 2026 Atharva Patil, P4inz Interactive Labs
 """Desktop launcher: local server + native window (pywebview), or the default browser."""
 
 from __future__ import annotations
 
+import os
 import socket
 import sys
 import threading
@@ -11,7 +14,9 @@ import webbrowser
 import uvicorn
 
 from . import APP_NAME
+from .config import begin_session, end_session
 from .server import create_app
+from .updater import apply_pending
 
 
 def _free_port() -> int:
@@ -21,14 +26,17 @@ def _free_port() -> int:
 
 
 class _Server:
-    def __init__(self, port: int = 0) -> None:
+    def __init__(self, port: int = 0, safe_mode: bool = False) -> None:
         self.port = port or _free_port()
-        self.app = create_app()
+        self.app = create_app(port=self.port)
+        self.app.state.safe_mode = safe_mode
         self.token: str = self.app.state.token
         config = uvicorn.Config(self.app, host="127.0.0.1", port=self.port, log_level="warning",
                                 access_log=False)
         self.server = uvicorn.Server(config)
         self.thread = threading.Thread(target=self.server.run, daemon=True)
+        self.app.state.request_exit = self.request_exit
+        self.on_exit = lambda: None
 
     def start(self) -> None:
         self.thread.start()
@@ -37,6 +45,11 @@ class _Server:
                 return
             time.sleep(0.1)
         raise RuntimeError("The local server did not start.")
+
+    def request_exit(self) -> None:
+        """Called when the app needs to close itself (for example to let the installer run)."""
+        self.on_exit()
+        self.server.should_exit = True
 
     def stop(self) -> None:
         self.server.should_exit = True
@@ -47,9 +60,21 @@ class _Server:
         return f"http://127.0.0.1:{self.port}/?t={self.token}"
 
 
+def _start_session() -> tuple[bool, bool]:
+    """(safe_mode, installing_update). Safe mode = the last two sessions ended abnormally."""
+    safe = begin_session()
+    if not safe and apply_pending():
+        end_session()
+        return safe, True
+    return safe, False
+
+
 def run_server(port: int = 0, open_browser: bool = True) -> int:
     """Headless/web mode: serve the UI and wait for Ctrl+C."""
-    srv = _Server(port)
+    safe, installing = _start_session()
+    if installing:
+        return 0
+    srv = _Server(port, safe)
     srv.start()
     print(f"{APP_NAME} is running. Open this address in your browser:\n  {srv.url}\n"
           "(Only this computer can reach it. Press Ctrl+C to stop.)", flush=True)
@@ -62,11 +87,15 @@ def run_server(port: int = 0, open_browser: bool = True) -> int:
         pass
     finally:
         srv.stop()
+        end_session()
     return 0
 
 
 def run_desktop() -> int:
-    srv = _Server()
+    safe, installing = _start_session()
+    if installing:
+        return 0
+    srv = _Server(safe_mode=safe)
     srv.start()
     try:
         import webview  # type: ignore
@@ -77,18 +106,26 @@ def run_desktop() -> int:
             holder: dict = {}
 
             class _Api:
-                def pick_file(self) -> str | None:
+                def _pick(self, label: str, pattern: str) -> str | None:
                     win = holder.get("win")
                     if win is None:
                         return None
                     res = win.create_file_dialog(
-                        webview.OPEN_DIALOG, file_types=("GGUF model (*.gguf)", "All files (*.*)"))
+                        webview.OPEN_DIALOG, file_types=(f"{label} ({pattern})", "All files (*.*)"))
                     return res[0] if res else None
+
+                def pick_file(self) -> str | None:
+                    return self._pick("GGUF model", "*.gguf")
+
+                def pick_pack(self) -> str | None:
+                    return self._pick("Slang pack", "*.json")
 
             holder["win"] = webview.create_window(
                 APP_NAME, srv.url, width=1120, height=780, min_size=(720, 560), js_api=_Api())
+            srv.on_exit = lambda: holder["win"].destroy()
             webview.start()
             srv.stop()
+            end_session()
             return 0
         except Exception as e:  # noqa: BLE001 - no GUI toolkit available: fall back
             print(f"Native window unavailable ({e}); opening your browser instead.", file=sys.stderr)
@@ -101,9 +138,9 @@ def run_desktop() -> int:
         pass
     finally:
         srv.stop()
+        end_session()
     return 0
 
 
 def _force_browser() -> bool:
-    import os
     return os.environ.get("TEXTREPAIRO_BROWSER") == "1"
