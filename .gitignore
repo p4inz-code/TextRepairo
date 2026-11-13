@@ -16,3 +16,4 @@ eval/_*.jsonl
 .uitest-home/
 .uitest-empty/
 .itest-portable/
+build.log
